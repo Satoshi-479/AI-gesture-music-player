@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎵 Gesture Music Player</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(90deg, #00ffd5, #ff64c8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+
+    .subtitle { color: #aaa; margin-bottom: 30px; font-size: 1rem; }
+
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto 20px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0, 255, 213, 0.3);
+      background: #000;
+      aspect-ratio: 4/3;
+    }
+
+    #video, #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #overlay { transform: scaleX(-1); pointer-events: none; }
+
+    .status {
+      margin: 20px 0;
+      padding: 25px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(0, 255, 213, 0.2);
+    }
+
+    .gesture {
+      font-size: 5rem;
+      font-weight: bold;
+      color: #00ffd5;
+      text-shadow: 0 0 30px rgba(0, 255, 213, 0.6);
+      line-height: 1;
+    }
+
+    .song {
+      margin-top: 15px;
+      color: #ff64c8;
+      font-size: 1.1rem;
+      min-height: 1.5em;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #00ffd5, #00b4d8);
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 20px rgba(0, 255, 213, 0.4);
+    }
+
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .instructions, .upload {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      text-align: left;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .instructions h3, .upload h3 {
+      color: #00ffd5;
+      margin-bottom: 12px;
+    }
+
+    .instructions ul { padding-left: 20px; line-height: 2; }
+
+    .note {
+      color: #ffcc00;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      background: rgba(255, 204, 0, 0.1);
+      padding: 8px;
+      border-radius: 6px;
+      border-left: 3px solid #ffcc00;
+    }
+
+    input[type="file"] {
+      margin: 10px 0;
+      color: #fff;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      width: 100%;
+    }
+
+    .file-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .file-list span {
+      background: rgba(0, 255, 213, 0.2);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      border: 1px solid rgba(0, 255, 213, 0.3);
+    }
+
+    .volume-display {
+      margin-top: 10px;
+      color: #ffcc00;
+      font-size: 0.95rem;
+    }
+
+    .loading {
+      padding: 40px;
+      color: #aaa;
+      font-size: 1.2rem;
+    }
+
+    .error {
+      padding: 20px;
+      background: rgba(255, 0, 0, 0.1);
+      border: 1px solid #ff4444;
+      border-radius: 8px;
+      margin: 10px 0;
+      color: #ff8888;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>🎵 Gesture Music Player</h1>
+    <p class="subtitle">Show fingers to the camera to play songs</p>
+
+    <div class="video-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+
+    <div class="status">
+      <div id="gestureDisplay" class="gesture">—</div>
+      <div id="songDisplay" class="song">Upload songs and start the camera to begin</div>
+      <div id="volumeDisplay" class="volume-display">Volume: 70%</div>
+    </div>
+
+    <div class="controls">
+      <button id="startBtn">🎥 Start Camera</button>
+      <button id="stopBtn" disabled>⏹️ Stop Music</button>
+      <button id="muteBtn">🔊 Mute</button>
+    </div>
+
+    <div class="instructions">
+      <h3>✋ How to use</h3>
+      <ul>
+        <li>👆 <b>1 finger</b> → Song 1</li>
+        <li>✌️ <b>2 fingers</b> → Song 2</li>
+        <li>🤟 <b>3 fingers</b> → Song 3</li>
+        <li>🖖 <b>4 fingers</b> → Song 4</li>
+        <li>🖐️ <b>5 fingers</b> → Song 5</li>
+        <li>⬆️ <b>Hand up</b> → Volume up</li>
+        <li>⬇️ <b>Hand down</b> → Volume down</li>
+      </ul>
+      <p class="note">⚠️ Camera access is required. Hold your hand clearly in front of the camera with good lighting.</p>
+    </div>
+
+    <div class="upload">
+      <h3>🎶 Upload Your Songs (up to 10)</h3>
+      <input type="file" id="songFiles" accept="audio/*" multiple />
+      <div id="fileList" class="file-list"></div>
+      <p class="note">Files are mapped to slots 1-10 in the order selected. No files? Demo songs will play instead.</p>
+    </div>
+
+    <audio id="audioPlayer"></audio>
+  </div>
+
+  <!-- MediaPipe dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js" crossorigin="anonymous"></script>
+
+  <script>
+    // ================== CONFIG ==================
+    const STABILITY_WINDOW = 10;
+    const STABILITY_THRESHOLD = 7;
+    const SONG_REPLAY_DELAY = 3000;
+    const DEMO_SONGS = {
+      1: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      2: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      3: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      4: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+      5: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+    };
+
+    // ================== DOM ==================
+    const video = document.getElementById('video');
+    const overlay = document.getElementById('overlay');
+    const ctx = overlay.getContext('2d');
+    const audio = document.getElementById('audioPlayer');
+    const gestureDisplay = document.getElementById('gestureDisplay');
+    const songDisplay = document.getElementById('songDisplay');
+    const volumeDisplay = document.getElementById('volumeDisplay');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const fileInput = document.getElementById('songFiles');
+    const fileListEl = document.getElementById('fileList');
+
+    // ================== STATE ==================
+    let fingerHistory = [];
+    let currentFingers = 0;
+    let lastSongPlayed = 0;
+    let lastSongTime = 0;
+    let songURLs = {};
+    let cameraInstance = null;
+    let muted = false;
+
+    // ================== FILE UPLOAD ==================
+    fileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      fileListEl.innerHTML = '';
+      songURLs = {};
+      files.slice(0, 10).forEach((file, idx) => {
+        const slot = idx + 1;
+        songURLs[slot] = URL.createObjectURL(file);
+        const tag = document.createElement('span');
+        tag.textContent = `${slot}. ${file.name.length > 20 ? file.name.slice(0, 20) + '…' : file.name}`;
+        fileListEl.appendChild(tag);
+      });
+      if (files.length > 0) {
+        songDisplay.textContent = `✅ Loaded ${Math.min(files.length, 10)} song(s)`;
+      }
+    });
+
+    // ================== MEDIAPIPE HANDS ==================
+    if (typeof Hands === 'undefined') {
+      songDisplay.innerHTML = '<div class="error">❌ MediaPipe failed to load. Check your internet connection and refresh.</div>';
+    } else {
+      const hands = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`
+      });
+
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.6
+      });
+
+      hands.onResults(onResults);
+
+      // ================== HANDLER ==================
+      function onResults(results) {
+        overlay.width = video.videoWidth || 640;
+        overlay.height = video.videoHeight || 480;
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+        let fingerCount = 0;
+        let handY = 0;
+
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+          const lm = results.multiHandLandmarks[0];
+
+          // Draw landmarks
+          if (typeof drawConnectors !== 'undefined' && typeof HAND_CONNECTIONS !== 'undefined') {
+            drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: '#00ffd5', lineWidth: 2 });
+            drawLandmarks(ctx, lm, { color: '#ff64c8', lineWidth: 1, radius: 4 });
+          }
+
+          // Count fingers
+          // [tipId, pipId, mcpId]
+          const FINGERS = [
+            [4, 3, 2],   // thumb (use x)
+            [8, 6, 5],   // index
+            [12, 10, 9], // middle
+            [16, 14, 13],// ring
+            [20, 18, 17] // pinky
+          ];
+
+          for (let i = 0; i < 5; i++) {
+            const [tip, pip, mcp] = FINGERS[i];
+            if (i === 0) {
+              if (Math.abs(lm[tip].x - lm[mcp].x) > 0.08) fingerCount++;
+            } else {
+              if (lm[tip].y < lm[pip].y) fingerCount++;
+            }
+          }
+
+          handY = lm[9].y; // middle MCP joint for volume
+        }
+
+        // Stability
+        fingerHistory.push(fingerCount);
+        if (fingerHistory.length > STABILITY_WINDOW) fingerHistory.shift();
+
+        if (fingerHistory.length === STABILITY_WINDOW) {
+          const counts = {};
+          fingerHistory.forEach(f => counts[f] = (counts[f] || 0) + 1);
+          const [stable, freq] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+          if (freq >= STABILITY_THRESHOLD) {
+            const stableNum = parseInt(stable);
+            if (stableNum !== currentFingers) {
+              currentFingers = stableNum;
+              gestureDisplay.textContent = currentFingers;
+              if (currentFingers >= 1 && currentFingers <= 5) {
+                playSong(currentFingers);
+              }
+            }
+          }
+        }
+
+        // Volume
+        if (handY > 0) {
+          const vol = Math.max(0, Math.min(1, 1 - handY));
+          audio.volume = muted ? 0 : vol;
+          volumeDisplay.textContent = `Volume: ${Math.round(vol * 100)}%`;
+        }
+      }
+
+      // ================== SONG PLAYBACK ==================
+      function playSong(num) {
+        const now = Date.now();
+        if (num === lastSongPlayed && !audio.paused) return;
+        if (now - lastSongTime < SONG_REPLAY_DELAY && num === lastSongPlayed) return;
+
+        const src = songURLs[num] || DEMO_SONGS[num];
+        if (!src) {
+          songDisplay.textContent = `❌ No song for slot ${num}`;
+          return;
+        }
+
+        // Stop current, load new
+        audio.pause();
+        audio.src = src;
+        audio.loop = true;
+        audio.play().then(() => {
+          const label = songURLs[num] ? `Your song ${num}` : `Demo song ${num}`;
+          songDisplay.textContent = `🎵 Now playing: ${label}`;
+          lastSongPlayed = num;
+          lastSongTime = now;
+          stopBtn.disabled = false;
+        }).catch(err => {
+          songDisplay.textContent = `❌ Could not play song ${num}`;
+          console.error('Play error:', err);
+        });
+      }
+
+      // ================== CAMERA START ==================
+      startBtn.addEventListener('click', async () => {
+        if (cameraInstance) return; // already running
+        try {
+          startBtn.textContent = '⏳ Starting...';
+          startBtn.disabled = true;
+
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 640, height: 480, facingMode: 'user' }
+          });
+          video.srcObject = stream;
+          await video.play();
+
+          if (typeof Camera === 'undefined') {
+            throw new Error('Camera utility not loaded');
+          }
+
+          cameraInstance = new Camera(video, {
+            onFrame: async () => {
+              if (video.readyState >= 2) {
+                await hands.send({ image: video });
+              }
+            },
+            width: 640,
+            height: 480
+          });
+          cameraInstance.start();
+
+          startBtn.textContent = '✅ Camera Active';
+          songDisplay.textContent = 'Show your hand to the camera!';
+        } catch (err) {
+          startBtn.textContent = '🎥 Start Camera';
+          startBtn.disabled = false;
+          let msg = err.message;
+          if (err.name === 'NotAllowedError') msg = 'Camera permission denied. Please allow access in your browser.';
+          if (err.name === 'NotFoundError') msg = 'No camera found on this device.';
+          songDisplay.innerHTML = `<div class="error">❌ ${msg}</div>`;
+        }
+      });
+
+      // ================== CONTROLS ==================
+      stopBtn.addEventListener('click', () => {
+        audio.pause();
+        songDisplay.textContent = '⏹️ Stopped';
+        stopBtn.disabled = true;
+      });
+
+      muteBtn.addEventListener('click', () => {
+        muted = !muted;
+        audio.muted = muted;
+        muteBtn.textContent = muted ? '🔇 Unmute' : '🔊 Mute';
+      });
+    }
+  </script>
+</body>
+</html>
