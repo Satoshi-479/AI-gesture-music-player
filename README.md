@@ -1,8 +1,13 @@
 # 🎵 AI Gesture Music Player
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://gesturemusicplayer.netlify.app/)
+[![GitHub repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Satoshi-479/AI-gesture-music-player)
+
 An interactive AI-powered music player that tracks your hand gestures in real-time using **MediaPipe** and **OpenCV** to control audio playback and select songs.
 
-Includes both a **Python Desktop Application** (with Pygame and FFmpeg sanitization) and an **Interactive Web UI** (`index.html`) using browser MediaPipe Vision tasks.
+> 🚀 **Live Demo:** Try the web player instantly in your browser at **[gesturemusicplayer.netlify.app](https://gesturemusicplayer.netlify.app/)**!
+
+Includes both a **Python Desktop Application** (with Pygame and FFmpeg sanitization) and an **Interactive Web UI** (`index.html`) deployed on Netlify.
 
 ---
 
@@ -81,18 +86,26 @@ Press `q` or `ESC` in the camera window to exit.
 
 ---
 
-## 🌐 Running the Web Version
+## 🌐 Web Version
 
-Simply open `index.html` directly in your web browser:
-1. Double-click `index.html` or serve via local server:
+### 🚀 Live Demo (Online)
+No installation required! Simply open the hosted application:
+👉 **[gesturemusicplayer.netlify.app](https://gesturemusicplayer.netlify.app/)**
+
+1. Allow webcam access when prompted.
+2. Show your hand gestures to the camera to trigger music.
+
+### 💻 Running Locally
+If you prefer running the web version locally:
+1. Double-click `index.html` or serve via a local HTTP server:
    ```bash
    python -m http.server 8000
    ```
-2. Grant webcam permission when prompted.
-3. Show your hand gestures to the camera to play music!
+2. Open `http://localhost:8000` in your browser.
 
 ---
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
